@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Split UPI</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#f5f6f8;color:#111827;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+.app{max-width:620px;margin:auto;padding:18px 14px 32px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.brand{font-size:18px;font-weight:900}.sub{font-size:10px;color:#6b7280}
+.tabs{display:flex;gap:3px;background:#e9ebef;padding:3px;border-radius:9px}
+.tabs button{border:0;background:transparent;padding:7px 11px;border-radius:7px;font-size:11px;font-weight:800;color:#667085}
+.tabs button.active{background:#fff;color:#111827;box-shadow:0 1px 4px #0001}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:20px;margin-bottom:13px;box-shadow:0 6px 24px #11182708}
+h1{font-size:25px;margin:0 0 7px;letter-spacing:-.5px}h2{font-size:17px;margin:0 0 5px}
+.intro{font-size:12px;color:#6b7280;line-height:1.5;margin:0 0 18px}
+label{display:block;font-size:11px;font-weight:850;color:#344054;margin:13px 0 6px}
+input{width:100%;padding:11px 12px;border:1px solid #d0d5dd;border-radius:9px;font-size:14px;outline:0;background:#fff}
+input:focus{border-color:#6366f1;box-shadow:0 0 0 3px #6366f11a}
+.row{display:flex;gap:7px}.row input{min-width:0}
+.btn{border:0;border-radius:9px;padding:11px 13px;font-size:11px;font-weight:850;cursor:pointer}
+.primary{width:100%;background:#4f46e5;color:white;margin-top:13px}.secondary{background:#f3f4f6;color:#344054}.green{background:#ecfdf3;color:#15803d}
+.status{min-height:16px;font-size:11px;font-weight:700;margin-top:8px}.ok{color:#15803d}.err{color:#dc2626}
+.vpa-state{font-size:10px;font-weight:700;margin-top:5px;min-height:14px}.saved{color:#15803d}.bad{color:#dc2626}
+.hidden{display:none!important}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px}
+.sum{background:#f8fafc;border:1px solid #eef0f3;border-radius:10px;padding:9px;text-align:center}.sum small{display:block;font-size:8px;color:#98a2b3;text-transform:uppercase;font-weight:850}.sum b{display:block;margin-top:3px;font-size:14px}.received{color:#15803d}
+.head{display:flex;justify-content:space-between;align-items:start}.step{font-size:10px;color:#6b7280;font-weight:800}.current{font-size:29px;font-weight:950}
+.progress{height:5px;background:#edf0f3;border-radius:99px;margin:12px 0;overflow:hidden}.bar{height:100%;background:#4f46e5}
+.qr{background:#fafbfc;border:1px solid #e5e7eb;border-radius:13px;padding:13px;text-align:center}.qrbox{width:270px;height:270px;max-width:100%;margin:auto;background:white;border-radius:10px;display:grid;place-items:center}.qrbox canvas,.qrbox img{width:256px!important;height:256px!important;max-width:100%}
+.paytext{font-size:10px;color:#6b7280;margin-top:9px}.payvalue{font-size:16px;font-weight:900}.upi{font:10px ui-monospace,monospace;color:#475467;word-break:break-all;margin-top:4px}
+.actions{display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin-top:10px}.actions .btn{padding:8px 10px}
+.big{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:11px}.big .btn{padding:12px}.btn:disabled{opacity:.4;cursor:not-allowed}
+.queue{margin-top:12px}.qrow{display:flex;justify-content:space-between;padding:8px 10px;border:1px solid #e5e7eb;border-radius:8px;margin-top:4px;font-size:10px}.qdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#cbd5e1;margin-right:6px}.qdot.done{background:#16a34a}.qdot.cur{background:#4f46e5}
+.note{background:#f8fafc;color:#667085;padding:9px;border-radius:9px;font-size:9px;line-height:1.5;margin-top:10px}
+.credits{text-align:center}.credit-label{font-size:8px;letter-spacing:1.2px;color:#98a2b3;font-weight:900}.credit-name{font-size:14px;font-weight:900;margin-top:5px}.credit-sub{font-size:10px;color:#6b7280;margin-top:2px}
+.git{display:inline-block;color:#4f46e5;text-decoration:none;font-size:10px;font-weight:800;margin-top:6px}
+.coffee{margin-top:11px;background:#111827;color:white;border:0;border-radius:9px;padding:10px 14px;font-size:11px;font-weight:850}.coffee-amount{display:inline-block;margin-left:4px;color:#d1d5db}
+.toast{position:fixed;left:50%;bottom:17px;transform:translate(-50%,18px);opacity:0;background:#111827;color:#fff;border-radius:9px;padding:10px 14px;font-size:11px;font-weight:800;z-index:20;transition:.2s;pointer-events:none;max-width:calc(100% - 24px);text-align:center}.toast.show{opacity:1;transform:translate(-50%,0)}.toast.success{background:#15803d}.toast.error{background:#b91c1c}
+@media(max-width:480px){.app{padding:12px 10px}.card{padding:17px}.top{align-items:flex-start}.big{grid-template-columns:1fr}.qrbox{width:266px;height:266px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div><div class="brand">₹ Split UPI</div><div class="sub">Simple UPI payment collection</div></div>
+    <div class="tabs">
+      <button id="paymentTab" class="active" type="button">Payment</button>
+      <button id="settingsTab" type="button">Settings</button>
+    </div>
+  </div>
+
+  <section id="paymentPage">
+    <div class="card">
+      <h1>Collect a payment</h1>
+      <p class="intro">Enter a UPI ID and amount. Amounts are automatically split into payments of up to ₹1,999.</p>
+
+      <label for="vpa">UPI ID / VPA</label>
+      <div class="row">
+        <input id="vpa" type="text" placeholder="yourname@upi" autocomplete="off" spellcheck="false">
+        <button class="btn secondary" id="saveVpa" type="button">Save</button>
+      </div>
+      <div id="vpaState" class="vpa-state"></div>
+
+      <label for="amount">Amount</label>
+      <input id="amount" type="number" min="0.01" step="0.01" placeholder="8000" inputmode="decimal">
+
+      <button class="btn primary" id="generate" type="button">Generate QR</button>
+      <div id="mainStatus" class="status"></div>
+    </div>
+
+    <div id="paymentCard" class="card hidden">
+      <div class="summary">
+        <div class="sum"><small>Total</small><b id="total"></b></div>
+        <div class="sum"><small>Received</small><b id="got" class="received"></b></div>
+        <div class="sum"><small>Remaining</small><b id="left"></b></div>
+      </div>
+
+      <div class="head">
+        <div><div class="step" id="step"></div><div class="current" id="current"></div></div>
+        <button class="btn secondary" id="newPayment" type="button">New</button>
+      </div>
+      <div class="progress"><div id="bar" class="bar"></div></div>
+
+      <div class="qr">
+        <div class="qrbox"><div id="qr"></div></div>
+        <div class="paytext">Scan to pay exactly</div>
+        <div id="payValue" class="payvalue"></div>
+        <div id="upiText" class="upi"></div>
+        <div class="actions">
+          <button class="btn secondary" id="copy" type="button">Copy UPI</button>
+          <button class="btn secondary" id="openUpi" type="button">Open UPI App</button>
+          <button class="btn secondary" id="download" type="button">Save QR</button>
+        </div>
+      </div>
+
+      <div class="big">
+        <button class="btn green" id="receivedBtn" type="button">✓ Mark Received</button>
+        <button class="btn primary" id="nextBtn" type="button" style="margin:0">Next →</button>
+      </div>
+
+      <div id="complete" class="note hidden" style="text-align:center;color:#15803d;background:#ecfdf3;font-weight:850;font-size:11px"></div>
+      <div id="queue" class="queue"></div>
+      <div class="note">“Received” is a manual confirmation. This page does not verify UPI/bank settlement.</div>
+    </div>
+  </section>
+
+  <section id="settingsPage" class="hidden">
+    <div class="card">
+      <h2>Settings</h2>
+      <p class="intro" style="margin-bottom:10px">Save your UPI ID in this browser. Nothing else is required.</p>
+      <label for="settingsVpa">UPI ID / VPA</label>
+      <input id="settingsVpa" type="text" placeholder="yourname@upi" autocomplete="off" spellcheck="false">
+      <button class="btn primary" id="settingsSave" type="button">Save VPA</button>
+      <div id="settingsStatus" class="status"></div>
+    </div>
+  </section>
+
+  <div class="card credits">
+    <div class="credit-label">CREDITS</div>
+    <div class="credit-name">Ranjeet Yelave</div>
+    <div class="credit-sub">Created for free to use • Open Source</div>
+    <a class="git" href="https://github.com/RanjeetYelave/split-upi" target="_blank" rel="noopener">GitHub ↗</a><br>
+    <button id="coffee" class="coffee" type="button">☕ Buy me a coffee <span class="coffee-amount">₹1,999</span></button>
+    <div style="font-size:9px;color:#98a2b3;margin-top:5px">Donation amount can be changed below</div>
+    <div class="row" style="max-width:260px;margin:7px auto 0">
+      <input id="coffeeAmount" type="number" min="1" step="0.01" value="1999" aria-label="Coffee donation amount">
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+(function(){
+'use strict';
+
+var SETTINGS='split_upi_settings';
+var SESSION='split_upi_session';
+var state={total:0,parts:[],index:0,received:[],vpa:''};
+var toastTimer=null;
+
+function $(id){return document.getElementById(id)}
+function money(n){return new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR',minimumFractionDigits:2}).format(n)}
+function validVpa(v){return /^[^\s@]+@[^\s@]+$/.test(v.trim())}
+function toast(message,type){
+  var t=$('toast');t.textContent=message;t.className='toast '+(type||'success')+' show';
+  clearTimeout(toastTimer);toastTimer=setTimeout(function(){t.classList.remove('show')},2300);
+}
+function getSettings(){try{return JSON.parse(localStorage.getItem(SETTINGS)||'{}')}catch(e){return {}}}
+function saveSettings(v){localStorage.setItem(SETTINGS,JSON.stringify({vpa:v}))}
+
+function switchTab(name){
+  var payment=name==='payment';
+  $('paymentPage').classList.toggle('hidden',!payment);
+  $('settingsPage').classList.toggle('hidden',payment);
+  $('paymentTab').classList.toggle('active',payment);
+  $('settingsTab').classList.toggle('active',!payment);
+  if(!payment)$('settingsVpa').value=$('vpa').value||getSettings().vpa||'';
+}
+
+function validate(){
+  var v=$('vpa').value.trim(),el=$('vpaState');
+  if(!v){el.textContent='';el.className='vpa-state';return}
+  if(validVpa(v)){el.textContent='✓ Valid UPI ID format';el.className='vpa-state saved'}
+  else{el.textContent='Enter a valid UPI ID such as name@upi';el.className='vpa-state bad'}
+}
+
+function saveVpa(){
+  var v=$('vpa').value.trim();
+  if(!validVpa(v)){toast('Please enter a valid UPI ID.','error');return}
+  saveSettings(v);$('settingsVpa').value=v;toast('UPI ID saved.','success');validate()
+}
+
+function saveSettingsPage(){
+  var v=$('settingsVpa').value.trim();
+  if(!validVpa(v)){ $('settingsStatus').textContent='Invalid UPI ID / VPA.';$('settingsStatus').className='status err';toast('Please enter a valid UPI ID.','error');return}
+  saveSettings(v);$('vpa').value=v;$('settingsStatus').textContent='VPA saved successfully.';$('settingsStatus').className='status ok';toast('VPA saved.','success');validate()
+}
+
+function split(n){
+  var parts=[],remaining=Math.round(n*100)/100;
+  while(remaining>0){
+    var p=Math.min(1999,remaining);
+    p=Math.round(p*100)/100;parts.push(p);remaining=Math.round((remaining-p)*100)/100;
+  }
+  return parts;
+}
+
+function saveSession(){localStorage.setItem(SESSION,JSON.stringify(state))}
+function loadSession(){try{var x=JSON.parse(localStorage.getItem(SESSION)||'null');return x&&x.parts&&x.parts.length?x:null}catch(e){return null}}
+
+function generate(){
+  var v=$('vpa').value.trim(),raw=$('amount').value.trim(),n=Number(raw);
+
+  if(!validVpa(v)){toast('Enter a valid UPI ID / VPA.','error');$('vpa').focus();return}
+  if(raw===''||!Number.isFinite(n)||n<=0){toast('Enter an amount greater than ₹0.','error');$('amount').focus();return}
+
+  /* Accept whole numbers such as 8000 and decimals such as 8000.50. */
+  if(!/^\d+(?:\.\d{1,2})?$/.test(raw)){toast('Amount can have a maximum of 2 decimal places.','error');return}
+
+  state={total:Math.round(n*100)/100,parts:split(n),index:0,received:[],vpa:v};
+  state.received=state.parts.map(function(){return false});
+  saveSettings(v);saveSession();render();$('paymentCard').classList.remove('hidden');toast('QR generated successfully.','success');
+}
+
+function paymentUri(amount){
+  return 'upi://pay?pa='+encodeURIComponent(state.vpa)+'&pn=UPI&am='+amount.toFixed(2)+'&cu=INR';
+}
+
+function renderQr(){
+  var host=$('qr');host.innerHTML='';
+  var uri=paymentUri(state.parts[state.index]);
+
+  if(typeof QRCode!=='undefined'){
+    new QRCode(host,{text:uri,width:256,height:256,correctLevel:QRCode.CorrectLevel.M});
+    return;
+  }
+
+  /* Online fallback if CDN did not load. */
+  var img=document.createElement('img');
+  img.alt='UPI QR';img.width=256;img.height=256;
+  img.src='https://api.qrserver.com/v1/create-qr-code/?size=256x256&data='+encodeURIComponent(uri);
+  img.onerror=function(){host.innerHTML='<span style="font-size:11px;color:#b91c1c">QR service unavailable. Check internet and reload.</span>'};
+  host.appendChild(img);
+}
+
+function receivedTotal(){
+  var x=0;
+  state.parts.forEach(function(p,i){if(state.received[i])x+=p});
+  return Math.round(x*100)/100;
+}
+
+function render(){
+  if(!state.parts.length)return;
+  var p=state.parts[state.index],got=receivedTotal(),left=Math.max(0,Math.round((state.total-got)*100)/100);
+  $('total').textContent=money(state.total);$('got').textContent=money(got);$('left').textContent=money(left);
+  $('step').textContent='Payment '+(state.index+1)+' of '+state.parts.length;
+  $('current').textContent=money(p);$('payValue').textContent=money(p);$('upiText').textContent=state.vpa;
+  $('bar').style.width=(got/state.total*100)+'%';
+  renderQr();
+
+  $('receivedBtn').disabled=state.received[state.index];
+  $('receivedBtn').textContent=state.received[state.index]?'✓ Received':'✓ Mark Received';
+  $('nextBtn').disabled=!state.received[state.index]||state.index>=state.parts.length-1;
+
+  var complete=got>=state.total;
+  $('complete').classList.toggle('hidden',!complete);
+  if(complete)$('complete').innerHTML='✓ Full amount received — '+money(state.total)+'<br><button class="btn primary" style="width:auto;margin-top:8px" onclick="window.splitUpiNew()">Start New Payment</button>';
+
+  var q='';
+  state.parts.forEach(function(x,i){
+    var cls=state.received[i]?'done':i===state.index?'cur':'';
+    var status=state.received[i]?'Received':i===state.index?'Current':'Pending';
+    q+='<div class="qrow"><span><span class="qdot '+cls+'"></span>Payment '+(i+1)+' — '+status+'</span><b>'+money(x)+'</b></div>';
+  });
+  $('queue').innerHTML=q;
+  saveSession();
+}
+
+function markReceived(){
+  if(state.received[state.index])return;
+  state.received[state.index]=true;render();toast(money(state.parts[state.index])+' marked received.','success');
+  if(receivedTotal()>=state.total){localStorage.removeItem(SESSION);toast('Full amount received.','success')}
+}
+
+function next(){
+  if(!state.received[state.index]||state.index>=state.parts.length-1)return;
+  state.index++;render();toast('Next payment ready.','success')
+}
+
+function newPayment(){
+  if(receivedTotal()>0 && !confirm('Start a new payment? Current payment progress will be cleared.'))return;
+  reset()
+}
+
+function reset(){
+  localStorage.removeItem(SESSION);state={total:0,parts:[],index:0,received:[],vpa:''};
+  $('paymentCard').classList.add('hidden');$('amount').value='';toast('Ready for a new payment.','success')
+}
+
+function copyVpa(){
+  var done=function(){toast('UPI ID copied.','success')};
+  if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(state.vpa).then(done).catch(function(){fallbackCopy(done)})}
+  else fallbackCopy(done)
+}
+function fallbackCopy(done){
+  var x=document.createElement('textarea');x.value=state.vpa;document.body.appendChild(x);x.select();document.execCommand('copy');x.remove();done()
+}
+function openUpi(){location.href=paymentUri(state.parts[state.index])}
+function downloadQr(){
+  var c=$('qr').querySelector('canvas');
+  if(!c){toast('QR is not ready yet.','error');return}
+  var a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='upi-'+state.parts[state.index]+'.png';a.click();toast('QR saved.','success')
+}
+
+function coffee(){
+  var v=getSettings().vpa||$('vpa').value.trim(),a=Number($('coffeeAmount').value);
+  if(!validVpa(v)){toast('Save your UPI ID first, then use Buy me a coffee.','error');switchTab('settings');return}
+  if(!Number.isFinite(a)||a<=0){toast('Enter a valid donation amount.','error');return}
+  state.vpa=v;location.href=paymentUri(a)
+}
+function updateCoffee(){var a=Number($('coffeeAmount').value)||0;$('coffee').innerHTML='☕ Buy me a coffee <span class="coffee-amount">'+money(a)+'</span>'}
+
+$('paymentTab').onclick=function(){switchTab('payment')};
+$('settingsTab').onclick=function(){switchTab('settings')};
+$('vpa').oninput=validate;
+$('saveVpa').onclick=saveVpa;
+$('settingsSave').onclick=saveSettingsPage;
+$('generate').onclick=generate;
+$('amount').onkeydown=function(e){if(e.key==='Enter')generate()};
+$('receivedBtn').onclick=markReceived;
+$('nextBtn').onclick=next;
+$('newPayment').onclick=newPayment;
+$('copy').onclick=copyVpa;
+$('openUpi').onclick=openUpi;
+$('download').onclick=downloadQr;
+$('coffee').onclick=coffee;
+$('coffeeAmount').oninput=updateCoffee;
+
+window.splitUpiNew=reset;
+
+(function init(){
+  var s=getSettings();if(s.vpa){$('vpa').value=s.vpa;$('settingsVpa').value=s.vpa}
+  validate();updateCoffee();
+
+  var session=loadSession();
+  if(session){
+    state=session;
+    $('vpa').value=state.vpa;
+    $('paymentCard').classList.remove('hidden');
+    render();
+  }
+})();
+})();
+</script>
+</body>
+</html>
